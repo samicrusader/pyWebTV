@@ -18,6 +18,7 @@ class WTVPServer(socketserver.ThreadingTCPServer):
         """
         socketserver.ThreadingTCPServer.server_bind(self)
         host, port = self.server_address[:2]
+        logging.info(f'Service listening on {host}:{port}.')
 
 class WTVPRequestHandler(socketserver.StreamRequestHandler):
     """
