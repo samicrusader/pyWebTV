@@ -161,11 +161,11 @@ class WTVPRequestHandler:
         words = self.requestline.split(' ')
         self.method = words[0]
         self.url = words[1]
+        parse_url(self)
         if not self.service == self.service_config['name']:
             self.wfile.write(b'500 MSN TV ran into a technical problem. Please try again.\r\nConnection: close\r\n\r\n')
             self.close_connection = False
             return self.close_connection
-        parse_url(self)
         parse_headers(self)
         self.box = Box(self.headers)
         self.ssid = self.headers['wtv-client-serial-number']
