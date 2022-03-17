@@ -76,10 +76,9 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
             return
         else:
             self.zrfile = self.rfile
-            self.zwfile = self.wfile
             request_handler = WTVPRequestHandler(
                 rfile=self.zrfile, 
-                wfile=self.zwfile,
+                wfile=self.wfile,
                 close_connection=self.close_connection, 
                 service_config=self.service_config, 
                 service_dir=self.service_dir, 
