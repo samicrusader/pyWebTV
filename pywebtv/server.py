@@ -32,7 +32,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
     service_config:dict = None
     service_name:str = None
 
-    def __init__(self, *args, service_ip, service_dir, service_config, **kwargs):
+    def __init__(self, *args, service_config, service_dir, service_ip, **kwargs):
         """
         This will initialize service settings.
         """
@@ -69,12 +69,19 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         words = self.requestline.split(' ')
         if self.requestline.endswith('HTTP/1.0') or self.requestline.endswith('HTTP/1.1'):
             self.wfile.write(f'''{words[-1]} 301 Moved\nConnection: close\nContent-Length: 0\nContent-Type: text/html\nLocation: https://github.com/samicrusader/pyWebTV\n\n'''.encode())
-        elif self.method in ['GET', 'POST', 'HEAD']:
+        elif words[0] not in ['GET', 'POST', 'HEAD']:
             self.wfile.write(b'400 Bad Request\nConnection: close\n\n')
             self.close_connection = True
             return
         else:
-            pass
+            request_handler = WTVPRequestHandler(
+                rfile=self.rfile, 
+                close_connection=self.close_connection, 
+                service_config=self.service_config, 
+                service_dir=self.service_dir, 
+                service_ip=self.service_ip
+            )
+            self.close_connection = request_handler.handle_request()
 
 class WTVPRequestHandler:
     """
@@ -84,8 +91,69 @@ class WTVPRequestHandler:
     """
     router = None
 
-    def __init__(self, router):
+    def __init__(self, rfile, close_connection, service_config, service_dir, service_ip):
         """
         This will initialize service settings.
         """
-        self.router = router
+        self.rfile = rfile
+        self.service_config = service_config
+        self.service_dir = service_dir
+        self.service_ip = service_ip
+        self.close_connection = close_connection
+
+    def handle_request(self):
+        self.close_connection = False
+        return self.close_connection
+
+    def parse_headers(self):
+        """
+        Parses HTTP headers to a dictionary.
+        """
+        self.headers = dict()
+        while True:
+            line = self.zfile.readline(65537)
+            if len(line) > 65536:
+                raise ValueError('Header is too long.')
+            if line in [b'\r\n', b'\n', b'']:
+                break
+            else:
+                line = line.split(b':')
+                self.headers.update({line[0].decode(): line[1].decode().strip()})
+        return
+
+    def parse_url(self):
+        """
+        This will parse a URL for use with services.
+        It will output the service, url, and parameters.
+        """
+        self.service = self.url.split(':')[0]
+        self.params = dict()
+        try: params = self.url.split('?')[1].split('&')
+        except: pass
+        else:
+            for param in params:
+                param = param.split('=')
+                try: 
+                    self.params.update({unquote(param[0].replace('+', ' ')): unquote(param[1].replace('+', ' '))})
+                except: 
+                    if param[0] == '':
+                        pass
+                    else:
+                        self.params.update({unquote(param[0].replace('+', ' ')): ''})
+        self.path = list()
+        path = self.url.split(':')[1].split('?')[0]
+        for f in list(filter(str, path.split('/'))):
+            self.path.append(f)
+        return
+
+    def decode_data_params(self):
+        """
+        This will decode self.data to a key: value dictionary.
+        Useful for POST requests.
+        """
+        data = self.data.decode()
+        params = dict()
+        for param in data.split('&'):
+            param = param.split('=')
+            params.update({param[0]: param[1]})
+        return params
