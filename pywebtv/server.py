@@ -32,6 +32,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
 
     This class will handle requests made to the server.
     """
+    box:Box = None
     close_connection:bool = True
     security:WTVNetworkSecurity = None
     security_on:bool = False
@@ -39,6 +40,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
     service_dir:str = None
     service_config:dict = None
     service_name:str = None
+    ssid:str = None
 
     def __init__(self, *args, service_config, service_dir, service_ip, **kwargs):
         """
@@ -131,9 +133,17 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                 requestline=self.requestline,
                 security_on=self.security_on,
                 security=self.security,
-                client_address=self.client_address
+                client_address=self.client_address,
+                box = self.box,
+                ssid = self.ssid
             )
-            self.close_connection = request_handler.handle_request()
+            request_handler.handle_request()
+            self.box = request_handler.box
+            self.ssid = request_handler.ssid
+            self.security_on = request_handler.security_on
+            if self.security_on:
+                self.security = request_handler.security
+            self.close_connection = request_handler.close_connection
 
 class WTVPRequestHandler:
     """
@@ -143,7 +153,7 @@ class WTVPRequestHandler:
     """
     router = None
 
-    def __init__(self, rfile, wfile, close_connection, service_config, service_dir, service_ip, requestline, security_on, security, client_address):
+    def __init__(self, rfile, wfile, close_connection, service_config, service_dir, service_ip, requestline, security_on, security, client_address, box, ssid):
         """
         This will initialize service settings.
         """
@@ -155,6 +165,9 @@ class WTVPRequestHandler:
         self.close_connection = close_connection
         self.requestline = requestline
         self.security_on = security_on
+        self.client_address = client_address
+        self.box = box
+        self.ssid = ssid
         if self.security_on:
             self.security = security
 
@@ -168,8 +181,13 @@ class WTVPRequestHandler:
             self.close_connection = False
             return self.close_connection
         parse_headers(self)
-        self.box = Box(self.headers)
-        self.ssid = self.headers['wtv-client-serial-number']
+        print(self.headers)
+        print(self.box)
+        print('\n')
+        if not self.box:
+            self.box = Box(self.headers)
+        if not self.ssid:
+            self.ssid = self.headers['wtv-client-serial-number']
         if self.method == 'POST':
             self.data = self.rfile.read(self.headers['Content-Length'])
             if self.headers['Content-Type'] == 'application/x-www-form-urlencoded':

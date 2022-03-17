@@ -7,6 +7,7 @@ import magic
 import os
 import pathlib
 import socket
+from tzlocal import get_localzone
 import xrequests
 from .decorators import WTVPResponse
 
