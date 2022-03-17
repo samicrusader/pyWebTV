@@ -6,6 +6,8 @@ import json
 import magic
 import os
 import pathlib
+import socket
+import xrequests
 from .decorators import WTVPResponse
 
 def load_json(file:str):
