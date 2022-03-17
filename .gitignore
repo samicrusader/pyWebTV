@@ -29,3 +29,4 @@ target/
 __pypackages__/
 cython_debug/
 *.mmdb
+test/
