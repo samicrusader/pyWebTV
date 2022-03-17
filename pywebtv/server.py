@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 from . import functions
-from .decorators import WTVPError
+from .decorators import Box, WTVPError
 from .security import WTVNetworkSecurity
 import io
 import logging
