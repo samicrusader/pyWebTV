@@ -20,9 +20,9 @@ class WTVPServer(socketserver.ThreadingTCPServer):
         host, port = self.server_address[:2]
         logging.info(f'Service listening on {host}:{port}.')
 
-class WTVPRequestHandler(socketserver.StreamRequestHandler):
+class WTVPRequestRouter(socketserver.StreamRequestHandler):
     """
-    WebTV request handler class.
+    WebTV request routing class.
 
     This class will handle requests made to the server.
     """
@@ -34,7 +34,7 @@ class WTVPRequestHandler(socketserver.StreamRequestHandler):
 
     def __init__(self, *args, service_ip, service_dir, service_config, **kwargs):
         """
-        This will initialize service settings for each request.
+        This will initialize service settings.
         """
         self.service_ip = service_ip
         self.service_dir = service_dir
@@ -69,3 +69,9 @@ class WTVPRequestHandler(socketserver.StreamRequestHandler):
         words = self.requestline.split(' ')
         if self.requestline.endswith('HTTP/1.0') or self.requestline.endswith('HTTP/1.1'):
             self.wfile.write(f'''{words[-1]} 301 Moved\nConnection: close\nContent-Length: 0\nContent-Type: text/html\nLocation: https://github.com/samicrusader/pyWebTV\n\n'''.encode())
+        elif self.method in ['GET', 'POST', 'HEAD']:
+            self.wfile.write(b'400 Bad Request\nConnection: close\n\n')
+            self.close_connection = True
+            return
+        else:
+            pass

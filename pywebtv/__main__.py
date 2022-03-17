@@ -11,7 +11,7 @@ import logging
 import os
 import sys
 from .functions import load_json
-from .server import WTVPRequestHandler, WTVPServer
+from .server import WTVPRequestRouter, WTVPServer
 
 #logging.basicConfig(level=logging.DEBUG, format=)
 
@@ -30,7 +30,7 @@ def run(
         port = service_config['port']
     sys.path.insert(1, service_dir) # FIXME: This is a hack.
     handlerargs = partial(
-        WTVPRequestHandler,
+        WTVPRequestRouter,
         service_ip=service_ip,
         service_dir=service_dir,
         service_config=service_config
