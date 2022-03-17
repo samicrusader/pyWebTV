@@ -1,6 +1,9 @@
 # -*- coding: UTF-8 -*-
 
+from . import functions
+from .decorators import WTVPError
 import logging
+import os
 import socketserver
 from urllib.parse import quote, unquote
 
@@ -117,11 +120,21 @@ class WTVPRequestHandler:
             self.data = self.rfile.read(self.headers['Content-Length'])
             if self.headers['Content-Type'] == 'application/x-www-form-urlencoded':
                 self.decode_data_params()
-        if not self.service_config['stub']: # TODO: add file handling
-            import service # This is that hack mentioned in __main__.py
-            path = self.path[0].replace('-', '_')
-            page = getattr(service, path)
-            request = self
+        path = self.path[0].replace('-', '_')
+        try:
+            if not self.service_config['stub']: # TODO: add file handling
+                import service # This is that hack mentioned in __main__.py
+                page = getattr(service, path)
+                request = self
+            else:
+                raise Exception('')
+        except:
+            try:
+                page = functions.return_file
+                request = self.return_filepath()
+            except UnboundLocalError:
+                page = WTVPError
+                request = 404
         resp = page(request)
         self.wfile.write(resp.generate_response())
         return self.close_connection
@@ -178,3 +191,22 @@ class WTVPRequestHandler:
             param = param.split('=')
             self.post_params.update({param[0]: param[1]})
         return
+
+    def return_filepath(self):
+        """
+        Return file path if found.
+        """
+        paths = [
+            os.path.join(self.service_dir, 'static', '/'.join(self.path)),
+            os.path.join(self.service_dir, 'static', '/'.join(self.path)+'.html'),
+            os.path.join(self.service_dir, 'static', '/'.join(self.path).replace('-', '_')),
+            os.path.join(self.service_dir, 'static', '/'.join(self.path).replace('-', '_')+'.html')
+        ]
+        for checkpath in paths:
+            # https://stackoverflow.com/q/6803505
+            normalized_path = os.path.normpath(checkpath)
+            if not normalized_path.startswith(self.service_dir):
+                raise IOError()
+            if os.path.isfile(normalized_path):
+                path = normalized_path
+        return path
