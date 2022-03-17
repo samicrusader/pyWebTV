@@ -37,6 +37,9 @@ class WTVPResponse():
         self.content_length = len(data)
         self.content_type = content_type
         self.data = data
+        self.forceEncrypt = forceEncrypt
+        if self.forceEncrypt:
+            self.forceEncryptObj = forceEncryptObj
 
     def generate_response(self):
         """
@@ -44,6 +47,8 @@ class WTVPResponse():
         non-encrypted sessions), or to be encrypted by the base
         request handler class.
         """
+        if self.forceEncrypt:
+            return self.generate_encrypted_response(self.forceEncryptObj)
         data = lookuptable[self.status_code]
         data += '\r\n'
         data += 'Connection: Keep-Alive\r\n'
@@ -56,4 +61,21 @@ class WTVPResponse():
         data += '\r\n'
         data = data.encode()
         data += self.data
+        return data
+    
+    def generate_encrypted_response(self, sec):
+        data = self.lookuptable[self.status_code]
+        data += '\r\n'
+        data += 'Connection: Keep-Alive\r\n'
+        data += 'wtv-encrypted: true\r\n'
+        for key, value in self.headers.items():
+            if key.find('^n') > -1:
+                key = key.split('^n')[0] # hack for multiple headers wtv-service
+            data += f'{key}: {value}\r\n'
+        encdata = sec.EncryptKey2(self.data)
+        data += f'Content-Length: {len(encdata)}\r\n'
+        data += f'Content-Type: {self.content_type}\r\n'
+        data += '\r\n'
+        data = data.encode()
+        data += encdata
         return data
