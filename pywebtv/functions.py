@@ -90,3 +90,39 @@ def returnLocalTime(ip:str):
     return {'wtv-client-time-zone': dt.strftime('%Z %z'),
             'wtv-client-time-dst-rule': dt.strftime('%Z'),
             'wtv-client-date': dt.strftime("%a %b %d %H:%M:%S %Y")}
+
+def returnIP():
+    """
+    Return the local machine's public IP address.
+
+    We need the public IP for Internet-based clients to properly connect.
+    This should get around NATs.
+
+    You can still change the reported and listening IPs either way.
+    This is only called if you don't.
+    """
+    try:
+        req = xrequests.get('https://34.117.59.81/ip', 
+                            headers={'Host': 'ifconfig.me'},
+                            verify=False) # Normally you don't do this, however
+                                          # we are just returning our IP.
+        ip = ''.join(re.findall(r'[0-9\.]', req.text))
+    except:
+        try:
+            returnLocalIP()
+        except:
+            raise ConnectionRefusedError('Unable to auto-obtain a services IP.')
+    else:
+        return ip
+
+def returnLocalIP():
+    """
+    Returns the local machine's LAN IP address.
+    This is needed to actually listen to a TCP socket!
+    """
+    try:
+        ip = socket.gethostbyname(socket.gethostname())
+    except:
+        raise ConnectionRefusedError('Unable to auto-obtain a local IP.')
+    else:
+        return ip
