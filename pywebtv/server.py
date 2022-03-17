@@ -75,3 +75,17 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
             return
         else:
             pass
+
+class WTVPRequestHandler:
+    """
+    WebTV request handler class.
+
+    This class will handle requests coming from the request router.
+    """
+    router = None
+
+    def __init__(self, router):
+        """
+        This will initialize service settings.
+        """
+        self.router = router
