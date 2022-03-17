@@ -60,8 +60,12 @@ class WTVPRequestHandler(socketserver.StreamRequestHandler):
         It will determine if the connection is plaintext, secure, or normal HTTP,
         then call functions to parse, perform, and log the request.
         """
-        # stub
-        logging.info('Sent data to client')
-        self.wfile.write(b'200 OK\nContent-Type: text/html\n\nTest page!')
-        self.close_connection = True
-        return
+        self.requestline = self.rfile.readline(65536).decode().strip()
+        if not self.requestline:
+            logging.debug(f'Connection from {self.client_address[0]}:{self.client_address[1]} dropped.')
+            self.close_connection = True
+            return
+
+        words = self.requestline.split(' ')
+        if self.requestline.endswith('HTTP/1.0') or self.requestline.endswith('HTTP/1.1'):
+            self.wfile.write(f'''{words[-1]} 301 Moved\nConnection: close\nContent-Length: 0\nContent-Type: text/html\nLocation: https://github.com/samicrusader/pyWebTV\n\n'''.encode())
