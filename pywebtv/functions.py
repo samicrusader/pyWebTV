@@ -32,41 +32,6 @@ def return_file(filepath:str):
         data = fh.read()
     return WTVPResponse(data=data, content_type=mimetype)
 
-def return_service(name:str, 
-                   port:int, 
-                   host:str=returnIP(), 
-                   DontEncryptRequests:bool=False,
-                   UseHTTP:bool=False,
-                   WideOpen:bool=False,
-                   UseServiceCookies:bool=False,
-                   NoMeter:bool=False,
-                   connections:int=-1):
-    """
-    Returns a wtv-service header from variables. 
-    It's a cleaner way to deploy one of these things.
-    """
-    flags = 0
-    
-    if DontEncryptRequests == True:
-        flags += 1
-    if UseHTTP == True:
-        flags += 2
-    if WideOpen == True:
-        flags += 4
-    if UseServiceCookies == True:
-        flags += 10
-    if NoMeter == True:
-        flags += 40
-    
-    strflags = str()
-    constr = str()
-    if not flags == 0:
-        strflags = f' flags=0x{format(11, "#08")}' # '#010x'    
-    if not connections == -1:
-        constr = f' connections={connections}'
-    
-    return f'name={name} host={host} port={port}{strflags}{constr}'
-
 def returnLocalTime(ip:str):
     """
     Returns a dictionary of headers that will set the client's time.
@@ -126,3 +91,38 @@ def returnLocalIP():
         raise ConnectionRefusedError('Unable to auto-obtain a local IP.')
     else:
         return ip
+
+def return_service(name:str, 
+                   port:int, 
+                   host:str=returnIP(), 
+                   DontEncryptRequests:bool=False,
+                   UseHTTP:bool=False,
+                   WideOpen:bool=False,
+                   UseServiceCookies:bool=False,
+                   NoMeter:bool=False,
+                   connections:int=-1):
+    """
+    Returns a wtv-service header from variables. 
+    It's a cleaner way to deploy one of these things.
+    """
+    flags = 0
+    
+    if DontEncryptRequests == True:
+        flags += 1
+    if UseHTTP == True:
+        flags += 2
+    if WideOpen == True:
+        flags += 4
+    if UseServiceCookies == True:
+        flags += 10
+    if NoMeter == True:
+        flags += 40
+    
+    strflags = str()
+    constr = str()
+    if not flags == 0:
+        strflags = f' flags=0x{format(11, "#08")}' # '#010x'    
+    if not connections == -1:
+        constr = f' connections={connections}'
+    
+    return f'name={name} host={host} port={port}{strflags}{constr}'
