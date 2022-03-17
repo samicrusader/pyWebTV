@@ -130,7 +130,8 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                 service_ip=self.service_ip,
                 requestline=self.requestline,
                 security_on=self.security_on,
-                security=self.security
+                security=self.security,
+                client_address=self.client_address
             )
             self.close_connection = request_handler.handle_request()
 
@@ -142,7 +143,7 @@ class WTVPRequestHandler:
     """
     router = None
 
-    def __init__(self, rfile, wfile, close_connection, service_config, service_dir, service_ip, requestline, security_on, security):
+    def __init__(self, rfile, wfile, close_connection, service_config, service_dir, service_ip, requestline, security_on, security, client_address):
         """
         This will initialize service settings.
         """
