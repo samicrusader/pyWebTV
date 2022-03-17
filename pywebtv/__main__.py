@@ -9,6 +9,8 @@ import argparse
 from functools import partial
 import logging
 import os
+import sys
+from .functions import load_json
 from .server import WTVPRequestHandler, WTVPServer
 
 #logging.basicConfig(level=logging.DEBUG, format=)
@@ -35,7 +37,7 @@ def run(
     )
     with WTVPServer((bind, port), handlerargs) as s:
         try:
-            wtvp.serve_forever()
+            s.serve_forever()
         except KeyboardInterrupt:
             print('\nstopping...')
             sys.exit(0)

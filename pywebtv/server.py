@@ -32,14 +32,13 @@ class WTVPRequestHandler(socketserver.StreamRequestHandler):
     service_config:dict = None
     service_name:str = None
 
-    def __init__(self, *args, service_ip, service_dir, service_config, service_name, **kwargs):
+    def __init__(self, *args, service_ip, service_dir, service_config, **kwargs):
         """
         This will initialize service settings for each request.
         """
         self.service_ip = service_ip
         self.service_dir = service_dir
         self.service_config = service_config
-        self.service_name = service_name
         super().__init__(*args, **kwargs)
 
     def handle(self):
