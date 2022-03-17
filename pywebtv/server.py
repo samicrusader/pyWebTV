@@ -74,8 +74,8 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
             self.close_connection = True
             return
         else:
-            self.zrfile = rfile
-            self.zwfile = wfile
+            self.zrfile = self.rfile
+            self.zwfile = self.wfile
             request_handler = WTVPRequestHandler(
                 rfile=self.zrfile, 
                 wfile=self.zwfile,
