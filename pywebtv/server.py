@@ -161,6 +161,10 @@ class WTVPRequestHandler:
         words = self.requestline.split(' ')
         self.method = words[0]
         self.url = words[1]
+        if not self.service == self.service_config['name']:
+            self.wfile.write(b'500 MSN TV ran into a technical problem. Please try again.\r\nConnection: close\r\n\r\n')
+            self.close_connection = False
+            return self.close_connection
         parse_url(self)
         parse_headers(self)
         self.box = Box(self.headers)
@@ -171,7 +175,7 @@ class WTVPRequestHandler:
                 decode_data_params(self)
         path = self.path[0].replace('-', '_')
         try:
-            if not self.service_config['stub']: # TODO: add file handling
+            if not self.service_config['stub']:
                 import service # This is that hack mentioned in __main__.py
                 page = getattr(service, path)
                 request = self
