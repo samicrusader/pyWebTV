@@ -2,6 +2,7 @@
 
 import logging
 import socketserver
+from urllib.parse import quote, unquote
 
 class WTVPServer(socketserver.ThreadingTCPServer):
     """
@@ -82,7 +83,8 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                 close_connection=self.close_connection, 
                 service_config=self.service_config, 
                 service_dir=self.service_dir, 
-                service_ip=self.service_ip
+                service_ip=self.service_ip,
+                requestline=self.requestline
             )
             self.close_connection = request_handler.handle_request()
 
@@ -94,7 +96,7 @@ class WTVPRequestHandler:
     """
     router = None
 
-    def __init__(self, rfile, wfile, close_connection, service_config, service_dir, service_ip):
+    def __init__(self, rfile, wfile, close_connection, service_config, service_dir, service_ip, requestline):
         """
         This will initialize service settings.
         """
@@ -104,11 +106,13 @@ class WTVPRequestHandler:
         self.service_dir = service_dir
         self.service_ip = service_ip
         self.close_connection = close_connection
+        self.requestline = requestline
 
     def handle_request(self):
         words = self.requestline.split(' ')
         self.method = words[0]
-        self.parse_url(words[1])
+        self.url = words[1]
+        self.parse_url()
         self.parse_headers()
         if self.method == 'POST':
             self.data = self.rfile.read(self.headers['Content-Length'])
