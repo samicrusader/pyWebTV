@@ -163,6 +163,8 @@ class WTVPRequestHandler:
         self.url = words[1]
         parse_url(self)
         parse_headers(self)
+        self.box = Box(self.headers)
+        self.ssid = self.headers['wtv-client-serial-number']
         if self.method == 'POST':
             self.data = self.rfile.read(self.headers['Content-Length'])
             if self.headers['Content-Type'] == 'application/x-www-form-urlencoded':
