@@ -14,8 +14,6 @@ from .server import WTVPRequestHandler, WTVPServer
 #logging.basicConfig(level=logging.DEBUG, format=)
 
 def run(
-    handler:WTVPRequestHandler,
-    server:WTVPServer,
     port:int,
     bind:str,
     service_ip:str,
@@ -30,12 +28,12 @@ def run(
         port = service_config['port']
     sys.path.insert(1, service_dir) # FIXME: This is a hack.
     handlerargs = partial(
-        handler,
+        WTVPRequestHandler,
         service_ip=service_ip,
         service_dir=service_dir,
         service_config=service_config
     )
-    with server((bind, port), handlerargs) as s:
+    with WTVPServer((bind, port), handlerargs) as s:
         try:
             wtvp.serve_forever()
         except KeyboardInterrupt:
@@ -52,7 +50,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     run(
-        service_dir = args.service,
+        service_dir=args.service,
         bind=args.bind,
         port=args.port,
         service_ip=args.service_ip
