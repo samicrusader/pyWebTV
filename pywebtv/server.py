@@ -74,8 +74,11 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
             self.close_connection = True
             return
         else:
+            self.zrfile = rfile
+            self.zwfile = wfile
             request_handler = WTVPRequestHandler(
-                rfile=self.rfile, 
+                rfile=self.zrfile, 
+                wfile=self.zwfile,
                 close_connection=self.close_connection, 
                 service_config=self.service_config, 
                 service_dir=self.service_dir, 
@@ -91,18 +94,33 @@ class WTVPRequestHandler:
     """
     router = None
 
-    def __init__(self, rfile, close_connection, service_config, service_dir, service_ip):
+    def __init__(self, rfile, wfile, close_connection, service_config, service_dir, service_ip):
         """
         This will initialize service settings.
         """
         self.rfile = rfile
+        self.wfile = wfile
         self.service_config = service_config
         self.service_dir = service_dir
         self.service_ip = service_ip
         self.close_connection = close_connection
 
     def handle_request(self):
-        self.close_connection = False
+        words = self.requestline.split(' ')
+        self.method = words[0]
+        self.parse_url(words[1])
+        self.parse_headers()
+        if self.method == 'POST':
+            self.data = self.rfile.read(self.headers['Content-Length'])
+            if self.headers['Content-Type'] == 'application/x-www-form-urlencoded':
+                self.decode_data_params()
+        if not self.service_config['stub']: # TODO: add file handling
+            import service # This is that hack mentioned in __main__.py
+            path = self.path[0].replace('-', '_')
+            page = getattr(service, path)
+            request = self
+        resp = page(request)
+        self.wfile.write(resp.generate_response())
         return self.close_connection
 
     def parse_headers(self):
@@ -111,7 +129,7 @@ class WTVPRequestHandler:
         """
         self.headers = dict()
         while True:
-            line = self.zfile.readline(65537)
+            line = self.rfile.readline(65537)
             if len(line) > 65536:
                 raise ValueError('Header is too long.')
             if line in [b'\r\n', b'\n', b'']:
@@ -152,8 +170,8 @@ class WTVPRequestHandler:
         Useful for POST requests.
         """
         data = self.data.decode()
-        params = dict()
+        self.post_params = dict()
         for param in data.split('&'):
             param = param.split('=')
-            params.update({param[0]: param[1]})
-        return params
+            self.post_params.update({param[0]: param[1]})
+        return
