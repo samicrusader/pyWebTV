@@ -19,7 +19,8 @@ def run(
     port:int,
     bind:str,
     service_ip:str,
-    service_dir:str
+    service_dir:str,
+    config:dict
 ):
     """
     Runs a WTVP server.
@@ -33,7 +34,8 @@ def run(
         WTVPRequestRouter,
         service_ip=service_ip,
         service_dir=service_dir,
-        service_config=service_config
+        service_config=service_config,
+        global_config=config
     )
     with WTVPServer((bind, port), handlerargs) as s:
         try:
@@ -45,15 +47,27 @@ def run(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='python3 -m pywebtv')
 
+    parser.add_argument('--config', '-c', default='config.json', help='Specify global configuration file.')
     parser.add_argument('--service', '-s', help='Specify service directory.')
     parser.add_argument('--bind', '-b', help='Specify IP address to bind to.')
     parser.add_argument('--port', '-p', default=0, help='Override port to listen on.')
     parser.add_argument('--service-ip', '-x', help='Specify IP address for network use.')
+
+    if not args._get_args():
+        parser.print_help()
+        exit(1)
+
+    try:
+        config = load_json(args.config)
+    except:
+        print('Specify a config.')
+        exit(1)
 
     args = parser.parse_args()
     run(
         service_dir=args.service,
         bind=args.bind,
         port=args.port,
-        service_ip=args.service_ip
+        service_ip=args.service_ip,
+        config=config
     )
