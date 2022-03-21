@@ -34,6 +34,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
     """
     box:Box = None
     close_connection:bool = True
+    global_config:dict = None
     security:WTVNetworkSecurity = None
     security_on:bool = False
     service_ip:str = None
@@ -42,13 +43,14 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
     service_name:str = None
     ssid:str = None
 
-    def __init__(self, *args, service_config, service_dir, service_ip, **kwargs):
+    def __init__(self, *args, service_config, service_dir, service_ip, global_config, **kwargs):
         """
         This will initialize service settings.
         """
         self.service_ip = service_ip
         self.service_dir = service_dir
         self.service_config = service_config
+        self.global_config = global_config
         super().__init__(*args, **kwargs)
 
     def handle(self):
