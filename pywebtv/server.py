@@ -6,8 +6,11 @@ from .security import WTVNetworkSecurity
 import io
 import logging
 import os
+import redis
 import socketserver
+import sqlalchemy
 from urllib.parse import quote, unquote
+from sqlalchemy.sql import text
 
 
 class WTVPServer(socketserver.ThreadingTCPServer):
@@ -54,11 +57,11 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         self.service_config = service_config
         self.global_config = global_config
 
-        sqlconfig = global_config['psql']
-        redisconfig = global_config['redis']
-        sqlengine = sqlalchemy.create_engine(
+        sqlconfig = global_config['db']['psql']
+        redisconfig = global_config['db']['redis']
+        self.sqlengine = sqlalchemy.create_engine(
             f"postgresql+pg8000://{sqlconfig['username']}:{quote(sqlconfig['password'])}@{sqlconfig['host']}:{sqlconfig['port']}/{sqlconfig['database']}")
-        redisengine = redis.Redis(
+        self.redisengine = redis.Redis(
             host=redisconfig['host'], port=redisconfig['port'], db=redisconfig['db'])
         super().__init__(*args, **kwargs)
 
@@ -70,7 +73,11 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         """
         logging.debug(
             f'Connection from {self.client_address[0]}:{self.client_address[1]}')
-        if database.engine.execute(text('select * from public.ipblacklist where ip = :ip;'), ip=self.client_address[0]):
+        print(dir(self.sqlengine.execute(text(
+            'select * from public.ipblacklist where ip = :ip;'), ip=self.client_address[0])))
+        if self.sqlengine.execute(text('select * from public.ipblacklist where ip = :ip;'), ip=self.client_address[0]).fetchall():
+            self.wfile.write(
+                b'500 MSN TV ran into a technical problem. Please try again.\nConnection: close\n\n')
             return
         self.close_connection = True
         self.handle_request()
