@@ -14,6 +14,22 @@ print('pyWebTV database management tool\nhttps://github.com/samicrusader/pyWebTV
 Base = declarative_base()
 
 
+class IPBlacklist(Base):
+    __tablename__ = "ipblacklist"
+    ip = sqlalchemy.Column(sqlalchemy.String(length=15),
+                           unique=True, nullable=False, primary_key=True)
+    expires = sqlalchemy.Column(
+        sqlalchemy.DateTime, unique=False, nullable=True)
+    reason = sqlalchemy.Column(sqlalchemy.String(
+        length=100), unique=False, nullable=False)
+
+
+class IPBlacklistSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = IPBlacklist
+        include_fk = True
+
+
 class Subscribers(Base):
     __tablename__ = "subscribers"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
