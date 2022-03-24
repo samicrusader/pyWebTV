@@ -188,16 +188,14 @@ def createdb():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='python3 dbmanage.py')
 
+    parser.add_argument(
+        '--create', '-d', help='Create database.', action='store_true')
+    parser.add_argument('--migrate', '-m',
+                        help='Migrate database.', action='store_true')
     parser.add_argument('--config', '-c', default='config.json',
                         help='Specify server configuration file.')
-    parser.add_argument('--create', '-d', help='Create database.')
-    parser.add_argument('--migrate', '-m', help='Migrate database.')
 
     args = parser.parse_args()
-
-    if not args._get_args():
-        parser.print_help()
-        exit(1)
 
     try:
         config = json.load(open(args.config, 'r'))['db']
