@@ -32,7 +32,6 @@ class SubscribersSchema(SQLAlchemyAutoSchema):
 class Terminals(Base):
     __tablename__ = "terminals"
     ssid = sqlalchemy.Column(sqlalchemy.String(length=16), primary_key=True, unique=True, nullable=False)
-    terminated = sqlalchemy.Column(sqlalchemy.Boolean, unique=False, nullable=False)
     subscriber = sqlalchemy.Column(sqlalchemy.Integer, unique=False, nullable=False)
 
 class TerminalsSchema(SQLAlchemyAutoSchema):
