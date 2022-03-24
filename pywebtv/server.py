@@ -53,6 +53,13 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         self.service_dir = service_dir
         self.service_config = service_config
         self.global_config = global_config
+
+        sqlconfig = global_config['psql']
+        redisconfig = global_config['redis']
+        sqlengine = sqlalchemy.create_engine(
+            f"postgresql+pg8000://{sqlconfig['username']}:{quote(sqlconfig['password'])}@{sqlconfig['host']}:{sqlconfig['port']}/{sqlconfig['database']}")
+        redisengine = redis.Redis(
+            host=redisconfig['host'], port=redisconfig['port'], db=redisconfig['db'])
         super().__init__(*args, **kwargs)
 
     def handle(self):
@@ -63,6 +70,8 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         """
         logging.debug(
             f'Connection from {self.client_address[0]}:{self.client_address[1]}')
+        if database.engine.execute(text('select * from public.ipblacklist where ip = :ip;'), ip=self.client_address[0]):
+            return
         self.close_connection = True
         self.handle_request()
         while not self.close_connection:
