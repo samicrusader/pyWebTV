@@ -119,7 +119,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         elif words[0] == 'SECURE':
             parse_headers(self)
             self.box = Box(self.headers)
-            self.ssid = self.headers['wtv-client-serial-number']
+            self.router.ssid = self.headers['wtv-client-serial-number']
             self.security = WTVNetworkSecurity()
             if 'wtv-ticket' in self.headers:
                 self.security.importdump(self.headers['wtv-ticket'])
@@ -137,24 +137,9 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
             request_handler = WTVPRequestHandler(
                 rfile=self.zfile,
                 wfile=self.wfile,
-                close_connection=self.close_connection,
-                service_config=self.service_config,
-                service_dir=self.service_dir,
-                service_ip=self.service_ip,
-                requestline=self.requestline,
-                security_on=self.security_on,
-                security=self.security,
-                client_address=self.client_address,
-                box=self.box,
-                ssid=self.ssid
+                router=self
             )
             request_handler.handle_request()
-            self.box = request_handler.box
-            self.ssid = request_handler.ssid
-            self.security_on = request_handler.security_on
-            if self.security_on:
-                self.security = request_handler.security
-            self.close_connection = request_handler.close_connection
 
 
 class WTVPRequestHandler:
@@ -165,42 +150,35 @@ class WTVPRequestHandler:
     """
     router = None
 
-    def __init__(self, rfile, wfile, close_connection, service_config, service_dir, service_ip, requestline, security_on, security, client_address, box, ssid):
+    def __init__(self, rfile, wfile, router):
         """
         This will initialize service settings.
         """
-        self.rfile = rfile
-        self.wfile = wfile
-        self.service_config = service_config
-        self.service_dir = service_dir
-        self.service_ip = service_ip
-        self.close_connection = close_connection
-        self.requestline = requestline
-        self.security_on = security_on
-        self.client_address = client_address
-        self.box = box
-        self.ssid = ssid
-        if self.security_on:
-            self.security = security
+        self.rfile = router.rfile
+        self.wfile = router.wfile
+        self.service_config = router.service_config
+        self.service_dir = router.service_dir
+        self.service_ip = router.service_ip
+        self.router = router
 
     def handle_request(self):
-        words = self.requestline.split(' ')
+        words = self.router.requestline.split(' ')
         self.method = words[0]
         self.url = words[1]
         parse_url(self)
         if not self.service == self.service_config['name']:
             self.wfile.write(
                 b'500 MSN TV ran into a technical problem. Please try again.\r\nConnection: close\r\n\r\n')
-            self.close_connection = False
-            return self.close_connection
+            router.close_connection = False
+            return
         parse_headers(self)
         print(self.headers)
-        print(self.box)
+        print(self.router.box)
         print('\n')
-        if not self.box:
-            self.box = Box(self.headers)
-        if not self.ssid:
-            self.ssid = self.headers['wtv-client-serial-number']
+        if not self.router.box:
+            self.router.box = Box(self.headers)
+        if not self.router.ssid:
+            self.router.ssid = self.headers['wtv-client-serial-number']
         if self.method == 'POST':
             self.data = self.rfile.read(self.headers['Content-Length'])
             if self.headers['Content-Type'] == 'application/x-www-form-urlencoded':
@@ -222,7 +200,7 @@ class WTVPRequestHandler:
                 request = 404
         resp = page(request)
         self.wfile.write(resp.generate_response())
-        return self.close_connection
+        return
 
     def return_filepath(request):
         """

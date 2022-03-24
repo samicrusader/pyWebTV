@@ -41,19 +41,19 @@ def finish_scriptless(request):
         'wtv-visit': f'wtv-head-waiter:/login',
         'wtv-ticket': dump
     }
-    headers.update(returnLocalTime(request.client_address[0]))
-    if request.box.systeminfo['romtype'] == 'bf0app':
+    headers.update(returnLocalTime(request.router.client_address[0]))
+    if request.router.box.systeminfo['romtype'] == 'bf0app':
         if request.params['oisp'] == 'true':
             data = open(os.path.join(request.service_dir,
                         'static', 'classic_openisp.tok'), 'rb')
         else:
             data = open(os.path.join(request.service_dir,
                         'static', 'classic.tok'), 'rb')
-    elif request.box.client == 3:
+    elif request.router.box.client == 3:
         data = open(os.path.join(request.service_dir,
                     'static', 'fiji.tok'), 'rb')
         # TODO: OpenISP for Dreamcast clients
-    elif request.box.client == 2:
+    elif request.router.box.client == 2:
         data = open(os.path.join(request.service_dir,
                     'static', 'mstv.tok'), 'rb')
     else:

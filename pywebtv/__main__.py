@@ -13,7 +13,7 @@ Version {__version__} - https://github.com/samicrusader/pyWebTV
 --""")
 
 
-# logging.basicConfig(level=logging.DEBUG, format=)
+logging.basicConfig(level=logging.DEBUG)
 
 
 def run(
