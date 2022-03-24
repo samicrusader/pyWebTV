@@ -59,17 +59,15 @@ if __name__ == '__main__':
     parser.add_argument('--service-ip', '-x',
                         help='Specify IP address for network use.')
 
-    if not args._get_args():
-        parser.print_help()
-        exit(1)
+    args = parser.parse_args()
 
     try:
         config = load_json(args.config)
     except:
         print('Specify a config.')
+        parser.print_help()
         exit(1)
 
-    args = parser.parse_args()
     run(
         service_dir=args.service,
         bind=args.bind,
