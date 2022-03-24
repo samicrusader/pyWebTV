@@ -1,35 +1,37 @@
 # -*- coding: UTF-8 -*-
 
+from .server import WTVPRequestRouter, WTVPServer
+from .functions import load_json
+import argparse
+import logging
+import os
+import sys
+from functools import partial
 __version__ = "1.0"
 print(f"""pyWebTV
 Version {__version__} - https://github.com/samicrusader/pyWebTV
 --""")
 
-import argparse
-from functools import partial
-import logging
-import os
-import sys
-from .functions import load_json
-from .server import WTVPRequestRouter, WTVPServer
 
-#logging.basicConfig(level=logging.DEBUG, format=)
+# logging.basicConfig(level=logging.DEBUG, format=)
+
 
 def run(
-    port:int,
-    bind:str,
-    service_ip:str,
-    service_dir:str,
-    config:dict
+    port: int,
+    bind: str,
+    service_ip: str,
+    service_dir: str,
+    config: dict
 ):
     """
     Runs a WTVP server.
     """
     service_dir = os.path.abspath(service_dir)
-    service_config = load_json(os.path.join(service_dir, 'config/service.json'))
+    service_config = load_json(os.path.join(
+        service_dir, 'config/service.json'))
     if port == 0:
         port = service_config['port']
-    sys.path.insert(1, service_dir) # FIXME: This is a hack.
+    sys.path.insert(1, service_dir)  # FIXME: This is a hack.
     handlerargs = partial(
         WTVPRequestRouter,
         service_ip=service_ip,
@@ -44,14 +46,18 @@ def run(
             print('\nstopping...')
             sys.exit(0)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='python3 -m pywebtv')
 
-    parser.add_argument('--config', '-c', default='config.json', help='Specify global configuration file.')
+    parser.add_argument('--config', '-c', default='config.json',
+                        help='Specify global configuration file.')
     parser.add_argument('--service', '-s', help='Specify service directory.')
     parser.add_argument('--bind', '-b', help='Specify IP address to bind to.')
-    parser.add_argument('--port', '-p', default=0, help='Override port to listen on.')
-    parser.add_argument('--service-ip', '-x', help='Specify IP address for network use.')
+    parser.add_argument('--port', '-p', default=0,
+                        help='Override port to listen on.')
+    parser.add_argument('--service-ip', '-x',
+                        help='Specify IP address for network use.')
 
     if not args._get_args():
         parser.print_help()

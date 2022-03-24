@@ -7,6 +7,7 @@ from Crypto.Random import get_random_bytes
 from json import dumps as jdump
 from json import loads as jload
 
+
 class WTVNetworkSecurity():
     """
     Originally reversed and released by Eric MacDonald (eMac), additional help in
@@ -38,7 +39,7 @@ class WTVNetworkSecurity():
     hRC4_rawkey2 = bytes()
     session_token = str()
 
-    def __init__(self, wtv_initial_key:bytes=base64.b64encode(get_random_bytes(8)).decode(), wtv_incarnation:int=1):
+    def __init__(self, wtv_initial_key: bytes = base64.b64encode(get_random_bytes(8)).decode(), wtv_incarnation: int = 1):
         """
         We initialize the incarnation (request count) and initial shared key
         used for encryption in this function.
@@ -65,12 +66,12 @@ class WTVNetworkSecurity():
             obj = getattr(self, i)
             obj = 'c~!'+obj
             x.update({i: obj})
-        
+
         x.update({'incarnation': self.incarnation})
         d = jdump(x).replace(':', '\\./')
         return d
 
-    def importdump(self, dump:str):
+    def importdump(self, dump: str):
         """
         This will import a security object, from a dump provided by the dump()
         function.
@@ -87,7 +88,7 @@ class WTVNetworkSecurity():
         if not self.hRC4_rawkey2 == b'':
             self.hRC4_Key2 = ARC4.new(self.hRC4_rawkey2)
 
-    def SetSharedKey(self, shared_key:bytes):
+    def SetSharedKey(self, shared_key: bytes):
         """
         This will set the shared key used for encryption.
 
@@ -98,7 +99,8 @@ class WTVNetworkSecurity():
         if len(shared_key) == 8:
             if self.past_shared_key == bytes():
                 self.past_shared_key = shared_key
-                self.past_shared_key_b64 = base64.b64encode(shared_key).decode()
+                self.past_shared_key_b64 = base64.b64encode(
+                    shared_key).decode()
             else:
                 self.past_shared_key = self.current_shared_key
                 self.past_shared_key_b64 = self.current_shared_key_b64
@@ -107,11 +109,11 @@ class WTVNetworkSecurity():
         else:
             raise ValueError("Invalid shared key length")
 
-    def set_incarnation(self, wtv_incarnation:int):
+    def set_incarnation(self, wtv_incarnation: int):
         'Sets the incarnation. Is there anything else to it?'
         self.incarnation = wtv_incarnation
 
-    def ProcessChallenge(self, wtv_challenge:str):
+    def ProcessChallenge(self, wtv_challenge: str):
         """
         This will process a security challenge and return a challenge response.
         The response is used to compare with what is sent back from the client
@@ -149,7 +151,8 @@ class WTVNetworkSecurity():
             echo_encrypted = hDES2.encrypt(challenge_echo_md5 + challenge_echo)
 
             # Last bytes is just extra padding
-            challenge_response = challenge[0:8] + echo_encrypted + (b'\x00' * 8)
+            challenge_response = challenge[0:8] + \
+                echo_encrypted + (b'\x00' * 8)
 
             return str(base64.b64encode(challenge_response), "ascii")
         else:
@@ -159,7 +162,7 @@ class WTVNetworkSecurity():
         """
         Issues a security challenge for WebTV clients to check encryption
         status.
-        
+
         This will also process said challenge to get a response, which is
         returned along with the challenge string. This is due to a bug either
         within WebTV's handling, or within Eric's code.
@@ -182,12 +185,14 @@ class WTVNetworkSecurity():
         self.session_key2 = get_random_bytes(16)
         new_shared_key = get_random_bytes(8)
 
-        challenge_puzzle = echo_me + self.session_key1 + self.session_key2 + new_shared_key
+        challenge_puzzle = echo_me + self.session_key1 + \
+            self.session_key2 + new_shared_key
         hMD5 = MD5.new()
         hMD5.update(challenge_puzzle)
         challenge_puzzle_md5 = hMD5.digest()
 
-        challenge_secret = challenge_puzzle + challenge_puzzle_md5 + (b'\x00' * 8)
+        challenge_secret = challenge_puzzle + \
+            challenge_puzzle_md5 + (b'\x00' * 8)
 
         # Shhhh!!
         hDES2 = DES.new(self.current_shared_key, DES.MODE_ECB)
@@ -208,33 +213,35 @@ class WTVNetworkSecurity():
         Specifically, these will update 2 RC4 encryption keys.
         """
         hMD5 = MD5.new()
-        hMD5.update(self.session_key1 + self.incarnation.to_bytes(4, byteorder='big') + self.session_key1)
+        hMD5.update(self.session_key1 + self.incarnation.to_bytes(4,
+                    byteorder='big') + self.session_key1)
         self.hRC4_rawkey1 = hMD5.digest()
         self.hRC4_Key1 = ARC4.new(self.hRC4_rawkey1)
 
         hMD51 = MD5.new()
-        hMD51.update(self.session_key2 + self.incarnation.to_bytes(4, byteorder='big') + self.session_key2)
+        hMD51.update(self.session_key2 + self.incarnation.to_bytes(4,
+                     byteorder='big') + self.session_key2)
         self.hRC4_rawkey2 = hMD51.digest()
         self.hRC4_Key2 = ARC4.new(self.hRC4_rawkey2)
 
     # These handle data encryption.
-    def Encrypt(self, context:ARC4.ARC4Cipher, data:bytes):
+    def Encrypt(self, context: ARC4.ARC4Cipher, data: bytes):
         if context != None:
             return context.encrypt(data)
         else:
             raise RuntimeError("Invalid RC4 encryption context")
 
-    def Decrypt(self, context:ARC4.ARC4Cipher, data:bytes):
+    def Decrypt(self, context: ARC4.ARC4Cipher, data: bytes):
         if context != None:
             return context.decrypt(data)
         else:
             raise RuntimeError("Invalid RC4 decryption context")
 
     # These deal with encryption using the 2 keys.
-    def EncryptKey1(self, data:bytes):
+    def EncryptKey1(self, data: bytes):
         return self.Encrypt(self.hRC4_Key1, data)
 
-    def EncryptKey2(self, data:bytes):
+    def EncryptKey2(self, data: bytes):
         return self.Encrypt(self.hRC4_Key2, data)
 
     def DecryptKey1(self, data):
