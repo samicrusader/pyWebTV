@@ -101,7 +101,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                     self.close_connection = True
                     return
                 try:
-                    decattempt = self.security.DecryptKey1(rbyte)
+                    decattempt = self.security.Decrypt(1, rbyte)
                 except RuntimeError as e:
                     self.wfile.write((f'500 {e}').encode())
                     return
@@ -110,7 +110,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                     if data.startswith(b'POST'):
                         cl = int(data.split(b'ength:')[
                                  1].split(b'\n')[0].strip())
-                        data += self.security.DecryptKey1(self.rfile.read(cl))
+                        data += self.security.Decrypt(1, self.rfile.read(cl))
                     break
             self.zfile = io.BytesIO(data)
             self.requestline = self.zfile.readline(65536)

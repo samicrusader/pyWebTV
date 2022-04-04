@@ -31,13 +31,13 @@ class WTVNetworkSecurity():
     past_shared_key = bytes()
     past_shared_key_b64 = str()
     incarnation = 1
-    session_key1 = bytes()
-    session_key2 = bytes()
+    rc4_key1 = bytes()
+    rc4_key2 = bytes()
     hRC4_Key1 = None
     hRC4_rawkey1 = bytes()
     hRC4_Key2 = None
     hRC4_rawkey2 = bytes()
-    session_token = str()
+    
 
     def __init__(self, wtv_initial_key: bytes = base64.b64encode(get_random_bytes(8)).decode(), wtv_incarnation: int = 1):
         """
@@ -56,7 +56,7 @@ class WTVNetworkSecurity():
         for scriptless -> headwaiter handoff.
         """
         x = dict()
-        for i in ['initial_shared_key', 'current_shared_key', 'past_shared_key', 'session_key1', 'session_key2', 'hRC4_rawkey1', 'hRC4_rawkey2']:
+        for i in ['initial_shared_key', 'current_shared_key', 'past_shared_key', 'rc4_key1', 'rc4_key2', 'hRC4_rawkey1', 'hRC4_rawkey2']:
             obj = getattr(self, i)
             if type(obj) is bytes:
                 obj = 'b~!'+base64.b64encode(obj).decode()
@@ -144,8 +144,8 @@ class WTVNetworkSecurity():
             challenge_echo_md5 = hMD5.digest()
 
             # RC4 encryption keys.  Stored in the wtv-ticket on the server side.
-            self.session_key1 = challenge_decrypted[40:56]
-            self.session_key2 = challenge_decrypted[56:72]
+            self.rc4_key1 = challenge_decrypted[40:56]
+            self.rc4_key2 = challenge_decrypted[56:72]
 
             hDES2 = DES.new(self.current_shared_key, DES.MODE_ECB)
             echo_encrypted = hDES2.encrypt(challenge_echo_md5 + challenge_echo)
@@ -181,12 +181,12 @@ class WTVNetworkSecurity():
         random_id_question_mark = get_random_bytes(8)
 
         echo_me = get_random_bytes(40)
-        self.session_key1 = get_random_bytes(16)
-        self.session_key2 = get_random_bytes(16)
+        self.rc4_key1 = get_random_bytes(16)
+        self.rc4_key2 = get_random_bytes(16)
         new_shared_key = get_random_bytes(8)
 
-        challenge_puzzle = echo_me + self.session_key1 + \
-            self.session_key2 + new_shared_key
+        challenge_puzzle = echo_me + self.rc4_key1 + \
+            self.rc4_key2 + new_shared_key
         hMD5 = MD5.new()
         hMD5.update(challenge_puzzle)
         challenge_puzzle_md5 = hMD5.digest()
@@ -213,39 +213,34 @@ class WTVNetworkSecurity():
         Specifically, these will update 2 RC4 encryption keys.
         """
         hMD5 = MD5.new()
-        hMD5.update(self.session_key1 + self.incarnation.to_bytes(4,
-                    byteorder='big') + self.session_key1)
+        hMD5.update(self.rc4_key1 + self.incarnation.to_bytes(4,
+                    byteorder='big') + self.rc4_key1)
         self.hRC4_rawkey1 = hMD5.digest()
         self.hRC4_Key1 = ARC4.new(self.hRC4_rawkey1)
 
         hMD51 = MD5.new()
-        hMD51.update(self.session_key2 + self.incarnation.to_bytes(4,
-                     byteorder='big') + self.session_key2)
+        hMD51.update(self.rc4_key2 + self.incarnation.to_bytes(4,
+                     byteorder='big') + self.rc4_key2)
         self.hRC4_rawkey2 = hMD51.digest()
         self.hRC4_Key2 = ARC4.new(self.hRC4_rawkey2)
 
     # These handle data encryption.
-    def Encrypt(self, context: ARC4.ARC4Cipher, data: bytes):
-        if context != None:
-            return context.encrypt(data)
+    def Encrypt(self, key:int, data: bytes):
+        if key:
+            match key:
+                case 1:
+                    return self.hRC4_Key1.encrypt(data)
+                case 2:
+                    return self.hRC4_Key2.encrypt(data)
         else:
             raise RuntimeError("Invalid RC4 encryption context")
 
-    def Decrypt(self, context: ARC4.ARC4Cipher, data: bytes):
-        if context != None:
-            return context.decrypt(data)
+    def Decrypt(self, key:int, data: bytes):
+        if key:
+            match key:
+                case 1:
+                    return self.hRC4_Key1.decrypt(data)
+                case 2:
+                    return self.hRC4_Key2.decrypt(data)
         else:
-            raise RuntimeError("Invalid RC4 decryption context")
-
-    # These deal with encryption using the 2 keys.
-    def EncryptKey1(self, data: bytes):
-        return self.Encrypt(self.hRC4_Key1, data)
-
-    def EncryptKey2(self, data: bytes):
-        return self.Encrypt(self.hRC4_Key2, data)
-
-    def DecryptKey1(self, data):
-        return self.Decrypt(self.hRC4_Key1, data)
-
-    def DecryptKey2(self, data):
-        return self.Decrypt(self.hRC4_Key2, data)
+            raise RuntimeError("Invalid RC4 encryption context")
