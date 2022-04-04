@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
 
 import base64
+import os
+import random
 from Crypto.Cipher import ARC4, DES
 from Crypto.Hash import MD5
 from Crypto.Random import get_random_bytes
@@ -37,7 +39,10 @@ class WTVNetworkSecurity():
     hRC4_rawkey1 = bytes()
     hRC4_Key2 = None
     hRC4_rawkey2 = bytes()
-    
+    session_token1 = str()
+    session_token2 = str()
+    ip_address = str()
+    ssid = str()
 
     def __init__(self, wtv_initial_key: bytes = base64.b64encode(get_random_bytes(8)).decode(), wtv_incarnation: int = 1):
         """
@@ -62,13 +67,13 @@ class WTVNetworkSecurity():
                 obj = 'b~!'+base64.b64encode(obj).decode()
             x.update({i: obj})
 
-        for i in ['initial_shared_key_b64', 'current_shared_key_b64', 'past_shared_key_b64', 'session_token']:
+        for i in ['initial_shared_key_b64', 'current_shared_key_b64', 'past_shared_key_b64', 'session_token1', 'session_token2', 'ip_address', 'ssid']:
             obj = getattr(self, i)
-            obj = 'c~!'+obj
+            obj = 'c~!'+base64.b64encode(obj).decode()
             x.update({i: obj})
 
         x.update({'incarnation': self.incarnation})
-        d = jdump(x).replace(':', '\\./')
+        d = base64.b64encode(jdump(x)).decode()
         return d
 
     def importdump(self, dump: str):
@@ -76,7 +81,7 @@ class WTVNetworkSecurity():
         This will import a security object, from a dump provided by the dump()
         function.
         """
-        x = jload(dump.replace('\\./', ':'))
+        x = jload(base64.b64decode(dump).decode())
         for key, value in x.items():
             if (type(value) is int) == False and value.startswith('b~!'):
                 value = base64.b64decode(value[3:])
@@ -87,6 +92,20 @@ class WTVNetworkSecurity():
             self.hRC4_Key1 = ARC4.new(self.hRC4_rawkey1)
         if not self.hRC4_rawkey2 == b'':
             self.hRC4_Key2 = ARC4.new(self.hRC4_rawkey2)
+
+    def SetSession(self, ip_address:str, ssid:str):
+        """
+        This will set session objects for a connection, which will be used to prevent account hijacking.
+
+        Settings for how strict the session enforcer should be will be present however.
+
+        The session tokens are just going to be random strings that get compared.
+        """
+        self.ip_address = ip_address
+        self.ssid = ssid
+        self.session_token1 = os.urandom(8).hex()
+        self.session_token2 = ''.join(random.choice(string.printable) for _ in range(16))
+        return (self.session_token1, self.session_token2)
 
     def SetSharedKey(self, shared_key: bytes):
         """
