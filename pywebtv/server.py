@@ -139,8 +139,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
             self.security = WTVNetworkSecurity()
             if 'wtv-ticket' in self.headers:
                 self.security.importdump(self.headers['wtv-ticket'])
-                self.security.set_incarnation(
-                    int(self.headers['wtv-incarnation']))
+                self.security.incarnation = int(self.headers['wtv-incarnation'])
                 self.security.SecureOn()
                 self.security_on = True
             else:

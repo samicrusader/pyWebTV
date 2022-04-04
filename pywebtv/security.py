@@ -109,10 +109,6 @@ class WTVNetworkSecurity():
         else:
             raise ValueError("Invalid shared key length")
 
-    def set_incarnation(self, wtv_incarnation: int):
-        'Sets the incarnation. Is there anything else to it?'
-        self.incarnation = wtv_incarnation
-
     def ProcessChallenge(self, wtv_challenge: str):
         """
         This will process a security challenge and return a challenge response.
