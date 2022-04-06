@@ -101,7 +101,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                     self.close_connection = True
                     return
                 try:
-                    decattempt = self.security.Decrypt(1, rbyte)
+                    decattempt = self.security.decrypt(1, rbyte)
                 except RuntimeError as e:
                     self.wfile.write((f'500 {e}').encode())
                     return
@@ -110,7 +110,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                     if data.startswith(b'POST'):
                         cl = int(data.split(b'ength:')[
                                  1].split(b'\n')[0].strip())
-                        data += self.security.Decrypt(1, self.rfile.read(cl))
+                        data += self.security.decrypt(1, self.rfile.read(cl))
                     break
             self.zfile = io.BytesIO(data)
             self.requestline = self.zfile.readline(65536)
@@ -138,9 +138,9 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
             self.router.ssid = self.headers['wtv-client-serial-number']
             self.security = WTVNetworkSecurity()
             if 'wtv-ticket' in self.headers:
-                self.security.importdump(self.headers['wtv-ticket'])
+                self.security.import_dump(self.headers['wtv-ticket'])
                 self.security.incarnation = int(self.headers['wtv-incarnation'])
-                self.security.SecureOn()
+                self.security.secure_on()
                 self.security_on = True
             else:
                 # FIXME: Something something missing ticket.

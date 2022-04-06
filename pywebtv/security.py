@@ -74,7 +74,7 @@ class WTVNetworkSecurity():
         d = base64.b64encode(jdump(x)).decode()
         return d
 
-    def importdump(self, dump: str):
+    def import_dump(self, dump: str):
         """
         This will import a security object, from a dump provided by the dump()
         function.
@@ -91,7 +91,7 @@ class WTVNetworkSecurity():
         if not self.hRC4_rawkey2 == b'':
             self.hRC4_Key2 = ARC4.new(self.hRC4_rawkey2)
 
-    def SetSession(self, ip_address:str, ssid:str):
+    def set_session(self, ip_address:str, ssid:str):
         """
         This will set session objects for a connection, which will be used to prevent account hijacking.
 
@@ -105,7 +105,7 @@ class WTVNetworkSecurity():
         self.session_token2 = ''.join(random.choice(string.printable) for _ in range(16))
         return (self.session_token1, self.session_token2)
     
-    def VerifySession(self, db, ssid, ticket:str): # FIXME: use redis db object in "db"
+    def verify_session(self, db, ssid, ticket:str): # FIXME: use redis db object in "db"
         """
         This function will verify session objects for this particular security session.
         """
@@ -127,7 +127,7 @@ class WTVNetworkSecurity():
             raise ValueError('Session token key does not match security object.')
         return True
 
-    def SetSharedKey(self, shared_key: bytes):
+    def set_shared_key(self, shared_key: bytes):
         """
         This will set the shared key used for encryption.
 
@@ -148,7 +148,7 @@ class WTVNetworkSecurity():
         else:
             raise ValueError("Invalid shared key length")
 
-    def ProcessChallenge(self, wtv_challenge: str):
+    def process_challenge(self, wtv_challenge: str):
         """
         This will process a security challenge and return a challenge response.
         The response is used to compare with what is sent back from the client
@@ -193,7 +193,7 @@ class WTVNetworkSecurity():
         else:
             raise ValueError("Couldn't solve challenge")
 
-    def IssueChallenge(self):
+    def issue_challenge(self):
         """
         Issues a security challenge for WebTV clients to check encryption
         status.
@@ -240,7 +240,7 @@ class WTVNetworkSecurity():
         challenge_cut = challenge[:-4]
         return [challenge_cut, response]
 
-    def SecureOn(self):
+    def secure_on(self):
         """
         This will initialize an encryption session.
         These are per-socket, and last the entire lifetime of the socket.
@@ -260,7 +260,7 @@ class WTVNetworkSecurity():
         self.hRC4_Key2 = ARC4.new(self.hRC4_rawkey2)
 
     # These handle data encryption.
-    def Encrypt(self, key:int, data: bytes):
+    def encrypt(self, key:int, data: bytes):
         if key:
             match key:
                 case 1:
@@ -270,7 +270,7 @@ class WTVNetworkSecurity():
         else:
             raise RuntimeError("Invalid RC4 encryption context")
 
-    def Decrypt(self, key:int, data: bytes):
+    def decrypt(self, key:int, data: bytes):
         if key:
             match key:
                 case 1:
