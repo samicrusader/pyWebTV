@@ -12,6 +12,10 @@ from json import loads as jload
 
 class WTVNetworkSecurity():
     """
+    This class is used to handle encryption and session verification for WebTV clients.
+    Many features will not work if encryption is not used, as this is a step in unlocking the box (the other being headwaiter sign-in). The encryption used in this project should not be considered as secure.
+    Sessions will be used to protect against account hijackings. 
+
     Originally reversed and released by Eric MacDonald (eMac), additional help in
     figuring this out was also provided by Zefie (who's working on a similar
     project)
@@ -19,12 +23,6 @@ class WTVNetworkSecurity():
     Sources are:
     https://github.com/zefie/zefie_wtvp_minisrv/blob/master/zefie_wtvp_minisrv/WTVSec.js
     https://discord.com/channels/669359927893950483/808168241306140703/848731674962821181 (WebTV Server, join from https://webtvwiki.net)
-
-    This is used to handle request encryption for WebTV clients.
-    Many features will not work if encryption is not used, as this is a step in
-    unlocking the box. (the other being headwaiter sign-in)
-
-    Eric's original code is modified for use with this server backend.
     """
     initial_shared_key = bytes()
     initial_shared_key_b64 = str()
@@ -106,6 +104,28 @@ class WTVNetworkSecurity():
         self.session_token1 = os.urandom(8).hex()
         self.session_token2 = ''.join(random.choice(string.printable) for _ in range(16))
         return (self.session_token1, self.session_token2)
+    
+    def VerifySession(self, db, ssid, ticket:str): # FIXME: use redis db object in "db"
+        """
+        This function will verify session objects for this particular security session.
+        """
+        x = jload(base64.b64decode(ticket).decode())
+        sess1 = x['session_token1'].replace('c~!', '')
+        sess2 = x['session_token2'].replace('c~!', '')
+        if not sess1 == self.session_token1 or not sess2 == self.session_token2:
+            raise ValueError('Session does not match security object.')
+        # This will be untested for awhile.
+        try:
+            sessionobj = db.get(f'session_{ssid}_{sess1}')
+        except:
+            raise ValueError('Session does not exist.')
+        if not sessionobj['ssid'] == ssid:
+            raise ValueError('SSID does not match session.')
+        elif sessionobj['k'] == sess2:
+            raise ValueError('Session token key does not match ticket.')
+        elif sessionobj['k'] == self.session_token2:
+            raise ValueError('Session token key does not match security object.')
+        return True
 
     def SetSharedKey(self, shared_key: bytes):
         """
