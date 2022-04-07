@@ -31,7 +31,9 @@ def finish_scriptless(request):
     netsec.issue_challenge()
     initial_key = netsec.current_shared_key_b64
     dump = netsec.dump()
+    request.router.close_connection = True
     headers = {
+        'Connection': 'close',
         'wtv-initial-key': initial_key,
         'wtv-service^n-0': 'reset',
         'wtv-service^n-1': return_service('wtv-*', '1603', request.service_ip, DontEncryptRequests=True),
