@@ -51,7 +51,7 @@ class WTVNetworkSecurity():
         initial_key = base64.b64decode(wtv_initial_key)
         self.initial_shared_key = initial_key
         self.incarnation = wtv_incarnation
-        self.SetSharedKey(initial_key)
+        self.set_shared_key(initial_key)
 
     def dump(self):
         """
@@ -67,11 +67,11 @@ class WTVNetworkSecurity():
 
         for i in ['initial_shared_key_b64', 'current_shared_key_b64', 'past_shared_key_b64', 'session_token1', 'session_token2', 'ip_address', 'ssid']:
             obj = getattr(self, i)
-            obj = 'c~!'+base64.b64encode(obj).decode()
+            obj = 'c~!'+base64.b64encode(obj.encode()).decode()
             x.update({i: obj})
 
         x.update({'incarnation': self.incarnation})
-        d = base64.b64encode(jdump(x)).decode()
+        d = base64.b64encode(jdump(x).encode()).decode()
         return d
 
     def import_dump(self, dump: str):
@@ -171,7 +171,7 @@ class WTVNetworkSecurity():
         test = challenge_decrypted[80:96]
         test2 = hMD5.digest()
         if test == test2:
-            self.SetSharedKey(challenge_decrypted[72:80])
+            self.set_shared_key(challenge_decrypted[72:80])
 
             challenge_echo = challenge_decrypted[0:40]
             hMD5 = MD5.new()
@@ -232,11 +232,11 @@ class WTVNetworkSecurity():
         # Shhhh!!
         hDES2 = DES.new(self.current_shared_key, DES.MODE_ECB)
         challenge_secreted = hDES2.encrypt(challenge_secret)
-        self.SetSharedKey(new_shared_key)
+        self.set_shared_key(new_shared_key)
 
         challenge = random_id_question_mark + challenge_secreted
         challenge = str(base64.b64encode(challenge), "ascii")
-        response = self.ProcessChallenge(challenge)
+        response = self.process_challenge(challenge)
         challenge_cut = challenge[:-4]
         return [challenge_cut, response]
 

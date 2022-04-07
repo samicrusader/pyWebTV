@@ -28,7 +28,7 @@ def finish_scriptless(request):
     Sends dialing information to the client.
     """
     netsec = WTVNetworkSecurity()
-    netsec.IssueChallenge()
+    netsec.issue_challenge()
     initial_key = netsec.current_shared_key_b64
     dump = netsec.dump()
     headers = {
