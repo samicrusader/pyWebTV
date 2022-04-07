@@ -9,6 +9,7 @@ import os
 import redis
 import socketserver
 import sqlalchemy
+from redis.commands.json.path import Path
 from urllib.parse import quote, unquote
 from sqlalchemy.sql import text
 
@@ -27,7 +28,7 @@ class WTVPServer(socketserver.ThreadingTCPServer):
         Binds the server to the TCP socket.
         """
         socketserver.ThreadingTCPServer.server_bind(self)
-        host, port = self.server_address[:2]
+        host, port = self.server_address
         logging.info(f'Service listening on {host}:{port}.')
 
 
@@ -40,6 +41,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
     box: Box = None
     close_connection: bool = True
     global_config: dict = None
+    headers: dict = None
     security: WTVNetworkSecurity = None
     security_on: bool = False
     service_ip: str = None
@@ -59,10 +61,13 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
 
         sqlconfig = global_config['db']['psql']
         redisconfig = global_config['db']['redis']
+        # sql used for service and user information storage
         self.sqlengine = sqlalchemy.create_engine(
             f"postgresql+pg8000://{sqlconfig['username']}:{quote(sqlconfig['password'])}@{sqlconfig['host']}:{sqlconfig['port']}/{sqlconfig['database']}")
+        # redis used for temporary session storage
         self.redisengine = redis.Redis(
             host=redisconfig['host'], port=redisconfig['port'], db=redisconfig['db'])
+        self.redisengine.json().set('connections', Path.rootPath(), dict())
         super().__init__(*args, **kwargs)
 
     def handle(self):
@@ -73,8 +78,6 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         """
         logging.debug(
             f'Connection from {self.client_address[0]}:{self.client_address[1]}')
-        print(dir(self.sqlengine.execute(text(
-            'select * from public.ipblacklist where ip = :ip;'), ip=self.client_address[0])))
         if self.sqlengine.execute(text('select * from public.ipblacklist where ip = :ip;'), ip=self.client_address[0]).fetchall():
             self.wfile.write(
                 b'500 MSN TV ran into a technical problem. Please try again.\nConnection: close\n\n')
@@ -91,6 +94,20 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         It will determine if the connection is plaintext, secure, or normal HTTP,
         then call functions to parse, perform, and log the request.
         """
+        def garbage_collection(self):
+            if self.ssid: # if we have an ssid for this connection
+                connectionlist = self.redisengine.json().get('connections')
+                try:
+                    # remove connection from "pool"
+                    connectionlist[self.ssid].remove(f'{self.client_address[1]}:{self.service_config["port"]}')
+                except:
+                    pass
+                self.redisengine.json().set('connections', Path.rootPath(), connectionlist)
+                if connectionlist[self.ssid]:
+                    if len(connectionlist[self.ssid]) == 0:
+                        for key in x.scan_iter(f'session_{self.ssid}_*'):
+                            print('garbage')
+                            self.redisengine.delete(key) # session garbage collection
         if self.security_on:
             data = bytes()
             while True:
@@ -99,6 +116,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                     logging.debug(
                         f'Connection from {self.client_address[0]}:{self.client_address[1]} dropped.')
                     self.close_connection = True
+                    garbage_collection(self)
                     return
                 try:
                     decattempt = self.security.decrypt(1, rbyte)
@@ -113,7 +131,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                         data += self.security.decrypt(1, self.rfile.read(cl))
                     break
             self.zfile = io.BytesIO(data)
-            self.requestline = self.zfile.readline(65536)
+            #self.requestline = self.zfile.readline(65536)
         else:
             self.zfile = self.rfile
 
@@ -122,6 +140,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
             logging.debug(
                 f'Connection from {self.client_address[0]}:{self.client_address[1]} dropped.')
             self.close_connection = True
+            garbage_collection(self)
             return
         words = self.requestline.split(' ')
         if self.requestline.endswith('HTTP/1.0') or self.requestline.endswith('HTTP/1.1'):
@@ -132,10 +151,26 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
             self.wfile.write(b'400 Bad Request\nConnection: close\n\n')
             self.close_connection = True
             return
-        elif words[0] == 'SECURE':
+        # parse box headers
+        if not self.headers:
             parse_headers(self)
+            print(self.headers)
+        if not self.box:
             self.box = Box(self.headers)
-            self.router.ssid = self.headers['wtv-client-serial-number']
+        if not self.ssid:
+            self.ssid = self.headers['wtv-client-serial-number']
+
+        # note connection
+        connectionlist = self.redisengine.json().get('connections')
+        if self.ssid not in connectionlist.keys():
+            connectionlist.update({self.ssid: list()})
+        portdata = f'{self.client_address[1]}:{self.service_config["port"]}'
+        if connectionlist[self.ssid] == None:
+            connectionlist[self.ssid] = list()
+        if not portdata in connectionlist[self.ssid]:
+            connectionlist[self.ssid] = connectionlist[self.ssid].append(portdata) # client port:server port
+            self.redisengine.json().set('connections', Path.rootPath(), connectionlist)
+        if words[0] == 'SECURE':
             self.security = WTVNetworkSecurity()
             if 'wtv-ticket' in self.headers:
                 self.security.import_dump(self.headers['wtv-ticket'])
@@ -145,6 +180,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
             else:
                 # FIXME: Something something missing ticket.
                 raise Exception('')
+            self.headers = None
             self.close_connection = False
             return 'break'
         else:
@@ -186,10 +222,10 @@ class WTVPRequestHandler:
                 b'500 MSN TV ran into a technical problem. Please try again.\r\nConnection: close\r\n\r\n')
             router.close_connection = False
             return
-        parse_headers(self)
-        print(self.headers)
-        print(self.router.box)
-        print('\n')
+        if not self.router.headers:
+            parse_headers(self)
+        else:
+            self.headers = self.router.headers
         if not self.router.box:
             self.router.box = Box(self.headers)
         if not self.router.ssid:
