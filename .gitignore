@@ -31,3 +31,5 @@ cython_debug/
 *.mmdb
 test/
 config.json
+*.pyc
+*.pyd
