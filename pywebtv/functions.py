@@ -11,6 +11,7 @@ from datetime import datetime
 from geoip2 import database as geoip2
 from tzlocal import get_localzone
 
+
 def load_json(file: str):
     """
     Returns a dictionary from a .json file that's specified with file.

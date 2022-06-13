@@ -47,22 +47,22 @@ def finish_scriptless(request):
     if request.router.box.systeminfo['romtype'] == 'bf0app':
         if request.params['oisp'] == 'true':
             data = open(os.path.join(request.service_dir,
-                        'static', 'classic_openisp.tok'), 'rb')
+                                     'static', 'classic_openisp.tok'), 'rb')
         else:
             data = open(os.path.join(request.service_dir,
-                        'static', 'classic.tok'), 'rb')
+                                     'static', 'classic.tok'), 'rb')
     elif request.router.box.client == 3:
         data = open(os.path.join(request.service_dir,
-                    'static', 'fiji.tok'), 'rb')
+                                 'static', 'fiji.tok'), 'rb')
         # TODO: OpenISP for Dreamcast clients
     elif request.router.box.client == 2:
         data = open(os.path.join(request.service_dir,
-                    'static', 'mstv.tok'), 'rb')
+                                 'static', 'mstv.tok'), 'rb')
     else:
         if request.params['oisp'] == 'true':
             data = open(os.path.join(request.service_dir,
-                        'static', 'plus_openisp.tok'), 'rb')
+                                     'static', 'plus_openisp.tok'), 'rb')
         else:
             data = open(os.path.join(request.service_dir,
-                        'static', 'plus.tok'), 'rb')
+                                     'static', 'plus.tok'), 'rb')
     return WTVPResponse(content_type='text/tellyscript', data=data.read(), headers=headers)

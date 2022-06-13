@@ -7,21 +7,21 @@ import logging
 import os
 import sys
 from functools import partial
+
 __version__ = "1.0"
 print(f"""pyWebTV
 Version {__version__} - https://github.com/samicrusader/pyWebTV
 --""")
 
-
 logging.basicConfig(level=logging.DEBUG)
 
 
 def run(
-    port: int,
-    bind: str,
-    service_ip: str,
-    service_dir: str,
-    config: dict
+        port: int,
+        bind: str,
+        service_ip: str,
+        service_dir: str,
+        config: dict
 ):
     """
     Runs a WTVP server.

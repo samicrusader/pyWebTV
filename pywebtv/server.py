@@ -78,7 +78,8 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         """
         logging.debug(
             f'Connection from {self.client_address[0]}:{self.client_address[1]}')
-        if self.sqlengine.execute(text('select * from public.ipblacklist where ip = :ip;'), ip=self.client_address[0]).fetchall():
+        if self.sqlengine.execute(text('select * from public.ipblacklist where ip = :ip;'),
+                                  ip=self.client_address[0]).fetchall():
             self.wfile.write(
                 b'500 MSN TV ran into a technical problem. Please try again.\nConnection: close\n\n')
             return
@@ -94,8 +95,9 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         It will determine if the connection is plaintext, secure, or normal HTTP,
         then call functions to parse, perform, and log the request.
         """
+
         def garbage_collection(self):
-            if self.ssid: # if we have an ssid for this connection
+            if self.ssid:  # if we have an ssid for this connection
                 connectionlist = self.redisengine.json().get('connections')
                 try:
                     # remove connection from "pool"
@@ -107,7 +109,8 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                     if len(connectionlist[self.ssid]) == 0:
                         for key in x.scan_iter(f'session_{self.ssid}_*'):
                             print('garbage')
-                            self.redisengine.delete(key) # session garbage collection
+                            self.redisengine.delete(key)  # session garbage collection
+
         if self.security_on:
             data = bytes()
             while True:
@@ -124,14 +127,15 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
                     self.wfile.write((f'500 {e}').encode())
                     return
                 data += decattempt
-                if data.endswith(b'\r\n\r\n') or data.endswith(b'\r\r') or data.endswith(b'\n\n') or data.endswith(b'\r\n\r\n') or data.endswith(b'\r\n\r') or data.endswith(b'\n\r\n'):
+                if data.endswith(b'\r\n\r\n') or data.endswith(b'\r\r') or data.endswith(b'\n\n') or data.endswith(
+                        b'\r\n\r\n') or data.endswith(b'\r\n\r') or data.endswith(b'\n\r\n'):
                     if data.startswith(b'POST'):
                         cl = int(data.split(b'ength:')[
-                                 1].split(b'\n')[0].strip())
+                                     1].split(b'\n')[0].strip())
                         data += self.security.decrypt(1, self.rfile.read(cl))
                     break
             self.zfile = io.BytesIO(data)
-            #self.requestline = self.zfile.readline(65536)
+            # self.requestline = self.zfile.readline(65536)
         else:
             self.zfile = self.rfile
 
@@ -168,7 +172,7 @@ class WTVPRequestRouter(socketserver.StreamRequestHandler):
         if connectionlist[self.ssid] == None:
             connectionlist[self.ssid] = list()
         if not portdata in connectionlist[self.ssid]:
-            connectionlist[self.ssid] = connectionlist[self.ssid].append(portdata) # client port:server port
+            connectionlist[self.ssid] = connectionlist[self.ssid].append(portdata)  # client port:server port
             self.redisengine.json().set('connections', Path.rootPath(), connectionlist)
         if words[0] == 'SECURE':
             self.security = WTVNetworkSecurity()
@@ -261,11 +265,11 @@ class WTVPRequestHandler:
             os.path.join(request.service_dir, 'static',
                          '/'.join(request.path)),
             os.path.join(request.service_dir, 'static',
-                         '/'.join(request.path)+'.html'),
+                         '/'.join(request.path) + '.html'),
             os.path.join(request.service_dir, 'static',
                          '/'.join(request.path).replace('-', '_')),
             os.path.join(request.service_dir, 'static',
-                         '/'.join(request.path).replace('-', '_')+'.html')
+                         '/'.join(request.path).replace('-', '_') + '.html')
         ]
         for checkpath in paths:
             # https://stackoverflow.com/q/6803505

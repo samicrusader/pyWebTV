@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from collections.abc import Mapping, MutableMapping
 
+
 # https://github.com/psf/requests/blob/f6d43b03fbb9a1e75ed63a9aa15738a8fce99b50/requests/structures.py#L15
 class CaseInsensitiveDict(MutableMapping):
     """A case-insensitive ``dict``-like object.

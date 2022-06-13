@@ -40,7 +40,8 @@ class Box:
             disk = x.split('STORAGESIZE="')[1].split('"')[0]
             version = headers['wtv-system-version'].replace(',', '.')
             self.systeminfo = {'version': version, 'disksize': disk}
-        elif 'client-supports-MSN-service' not in self.capabilities.keys() or self.capabilities['client-supports-MSN-service'] == False:
+        elif 'client-supports-MSN-service' not in self.capabilities.keys() or self.capabilities[
+            'client-supports-MSN-service'] == False:
             self.client = 0
         elif self.capabilities['client-supports-MSN-service'] == True:
             self.client = 1
@@ -168,7 +169,8 @@ class WTVPResponse():
     handled with the handler itself.
     """
 
-    def __init__(self, content_type: str, data: bytes = b'', status_code: int = 200, headers: dict = {}, forceEncrypt: bool = False, forceEncryptObj=None):
+    def __init__(self, content_type: str, data: bytes = b'', status_code: int = 200, headers: dict = {},
+                 forceEncrypt: bool = False, forceEncryptObj=None):
         """
         Initializes the class by setting shared variables.
         """

@@ -42,7 +42,8 @@ class WTVNetworkSecurity():
     ip_address = str()
     ssid = str()
 
-    def __init__(self, wtv_initial_key: bytes = base64.b64encode(get_random_bytes(8)).decode(), wtv_incarnation: int = 1):
+    def __init__(self, wtv_initial_key: bytes = base64.b64encode(get_random_bytes(8)).decode(),
+                 wtv_incarnation: int = 1):
         """
         We initialize the incarnation (request count) and initial shared key
         used for encryption in this function.
@@ -59,15 +60,17 @@ class WTVNetworkSecurity():
         for scriptless -> headwaiter handoff.
         """
         x = dict()
-        for i in ['initial_shared_key', 'current_shared_key', 'past_shared_key', 'rc4_key1', 'rc4_key2', 'hRC4_rawkey1', 'hRC4_rawkey2']:
+        for i in ['initial_shared_key', 'current_shared_key', 'past_shared_key', 'rc4_key1', 'rc4_key2', 'hRC4_rawkey1',
+                  'hRC4_rawkey2']:
             obj = getattr(self, i)
             if type(obj) is bytes:
-                obj = 'b~!'+base64.b64encode(obj).decode()
+                obj = 'b~!' + base64.b64encode(obj).decode()
             x.update({i: obj})
 
-        for i in ['initial_shared_key_b64', 'current_shared_key_b64', 'past_shared_key_b64', 'session_token1', 'session_token2', 'ip_address', 'ssid']:
+        for i in ['initial_shared_key_b64', 'current_shared_key_b64', 'past_shared_key_b64', 'session_token1',
+                  'session_token2', 'ip_address', 'ssid']:
             obj = getattr(self, i)
-            obj = 'c~!'+base64.b64encode(obj.encode()).decode()
+            obj = 'c~!' + base64.b64encode(obj.encode()).decode()
             x.update({i: obj})
 
         x.update({'incarnation': self.incarnation})
@@ -91,7 +94,7 @@ class WTVNetworkSecurity():
         if not self.hRC4_rawkey2 == b'':
             self.hRC4_Key2 = ARC4.new(self.hRC4_rawkey2)
 
-    def set_session(self, ip_address:str, ssid:str):
+    def set_session(self, ip_address: str, ssid: str):
         """
         This will set session objects for a connection, which will be used to prevent account hijacking.
 
@@ -104,8 +107,8 @@ class WTVNetworkSecurity():
         self.session_token1 = os.urandom(8).hex()
         self.session_token2 = ''.join(random.choice(string.printable) for _ in range(16))
         return (self.session_token1, self.session_token2)
-    
-    def verify_session(self, db, ssid, ticket:str): # FIXME: use redis db object in "db"
+
+    def verify_session(self, db, ssid, ticket: str):  # FIXME: use redis db object in "db"
         """
         This function will verify session objects for this particular security session.
         """
@@ -187,7 +190,7 @@ class WTVNetworkSecurity():
 
             # Last bytes is just extra padding
             challenge_response = challenge[0:8] + \
-                echo_encrypted + (b'\x00' * 8)
+                                 echo_encrypted + (b'\x00' * 8)
 
             return str(base64.b64encode(challenge_response), "ascii")
         else:
@@ -221,13 +224,13 @@ class WTVNetworkSecurity():
         new_shared_key = get_random_bytes(8)
 
         challenge_puzzle = echo_me + self.rc4_key1 + \
-            self.rc4_key2 + new_shared_key
+                           self.rc4_key2 + new_shared_key
         hMD5 = MD5.new()
         hMD5.update(challenge_puzzle)
         challenge_puzzle_md5 = hMD5.digest()
 
         challenge_secret = challenge_puzzle + \
-            challenge_puzzle_md5 + (b'\x00' * 8)
+                           challenge_puzzle_md5 + (b'\x00' * 8)
 
         # Shhhh!!
         hDES2 = DES.new(self.current_shared_key, DES.MODE_ECB)
@@ -249,18 +252,18 @@ class WTVNetworkSecurity():
         """
         hMD5 = MD5.new()
         hMD5.update(self.rc4_key1 + self.incarnation.to_bytes(4,
-                    byteorder='big') + self.rc4_key1)
+                                                              byteorder='big') + self.rc4_key1)
         self.hRC4_rawkey1 = hMD5.digest()
         self.hRC4_Key1 = ARC4.new(self.hRC4_rawkey1)
 
         hMD51 = MD5.new()
         hMD51.update(self.rc4_key2 + self.incarnation.to_bytes(4,
-                     byteorder='big') + self.rc4_key2)
+                                                               byteorder='big') + self.rc4_key2)
         self.hRC4_rawkey2 = hMD51.digest()
         self.hRC4_Key2 = ARC4.new(self.hRC4_rawkey2)
 
     # These handle data encryption.
-    def encrypt(self, key:int, data: bytes):
+    def encrypt(self, key: int, data: bytes):
         if key:
             match key:
                 case 1:
@@ -270,7 +273,7 @@ class WTVNetworkSecurity():
         else:
             raise RuntimeError("Invalid RC4 encryption context")
 
-    def decrypt(self, key:int, data: bytes):
+    def decrypt(self, key: int, data: bytes):
         if key:
             match key:
                 case 1:

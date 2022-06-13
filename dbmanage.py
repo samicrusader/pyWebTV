@@ -9,7 +9,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import text
 from urllib.parse import quote
 
-print('pyWebTV database management tool\nhttps://github.com/samicrusader/pyWebTV\nTAKE BACKUPS WHEN USING THIS TOOL!!!!\n')
+print(
+    'pyWebTV database management tool\nhttps://github.com/samicrusader/pyWebTV\nTAKE BACKUPS WHEN USING THIS TOOL!!!!\n')
 
 Base = declarative_base()
 
@@ -179,8 +180,11 @@ def redis_get(name: str):
 
 
 def createdb():
-    if engine.execute(text('select exists (select from information_schema.tables where table_schema = \'public\' and table_name = \'subscribers\' or table_name = \'terminals\' or table_name = \'users\');')).one()[0] == True:
-        input('You are going to wipe your database!\nPlease Ctrl+C NOW if you do not want to do this.\nPress Enter to proceed...')
+    if engine.execute(
+            text('select exists (select from information_schema.tables where table_schema = \'public\' and table_name = \'subscribers\' or table_name = \'terminals\' or table_name = \'users\');')).one()[
+        0] == True:
+        input(
+            'You are going to wipe your database!\nPlease Ctrl+C NOW if you do not want to do this.\nPress Enter to proceed...')
         Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
 
