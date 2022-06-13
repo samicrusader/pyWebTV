@@ -181,8 +181,9 @@ def redis_get(name: str):
 
 def createdb():
     if engine.execute(
-            text('select exists (select from information_schema.tables where table_schema = \'public\' and table_name = \'subscribers\' or table_name = \'terminals\' or table_name = \'users\');')).one()[
-        0] == True:
+            text(
+                'select exists (select from information_schema.tables where table_schema = \'public\' and table_name = \'subscribers\' or table_name = \'terminals\' or table_name = \'users\');')).one()[
+        0]:
         input(
             'You are going to wipe your database!\nPlease Ctrl+C NOW if you do not want to do this.\nPress Enter to proceed...')
         Base.metadata.drop_all(engine)
@@ -210,7 +211,7 @@ if __name__ == '__main__':
     sqlconfig = config['psql']
     redisconfig = config['redis']
     engine = sqlalchemy.create_engine(
-        f"postgresql+pg8000://{sqlconfig['username']}:{quote(sqlconfig['password'])}@{sqlconfig['host']}:{sqlconfig['port']}/{sqlconfig['database']}")
+        f"postgresql://{sqlconfig['username']}:{quote(sqlconfig['password'])}@{sqlconfig['host']}:{sqlconfig['port']}/{sqlconfig['database']}")
     r = redis.Redis(
         host=redisconfig['host'], port=redisconfig['port'], db=redisconfig['db'])
 
